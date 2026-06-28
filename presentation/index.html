@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credit Ingestion Engine Presentation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-intro">
+
+  <!-- Background decorations -->
+  <div class="bg-grid"></div>
+  <div class="bg-glows">
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+  </div>
+
+  <!-- Slides Autoplay Timeline Progress -->
+  <div class="auto-advance-indicator">
+    <div class="auto-advance-fill"></div>
+  </div>
+
+  <!-- Slides Main Wrapper -->
+  <div class="slides-wrapper">
+
+    <!-- SLIDE 1: INTRO -->
+    <section class="slide active" data-theme="theme-intro">
+      <div class="intro-slide">
+        <div class="slide-category">Portfolio Showcase</div>
+        <h1 class="intro-title">Real-Time Event Processing & Resilient Reverse ETL Simulation</h1>
+        <p class="intro-subtitle">A high-integrity data engineering pipeline demonstrating real-time ingestion, schema verification, batch orchestration, and automated reconciliation audit trials.</p>
+        
+        <div class="intro-meta">
+          <div class="meta-item">
+            <span class="meta-label">Architecture</span>
+            <span class="meta-val">Hybrid Stream / Batch</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Key Technologies</span>
+            <span class="meta-val">Kinesis • Airflow • Postgres • Pydantic</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Observability</span>
+            <span class="meta-val">Audit Logs & DLQ Isolation</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: PHASE A - STREAMING PIPELINE -->
+    <section class="slide" data-theme="theme-phase-a">
+      <div class="slide-title-wrapper">
+        <div class="slide-category">Phase A: Low Latency Ingestion</div>
+        <h2 class="slide-title">Real-Time Kinesis Streaming Pipeline</h2>
+      </div>
+
+      <div class="grid-container grid-2col">
+        <div class="glass-card" id="card-kinesis">
+          <div class="card-icon">⚡</div>
+          <h3 class="card-title">LocalStack Kinesis Integration</h3>
+          <p class="card-text">Simulates high-throughput cloud streaming locally, avoiding licensing limits or cloud costs.</p>
+          <ul class="bullet-list">
+            <li><strong>Partitioned Shards</strong>: Mimics production scaling by splitting application traffic.</li>
+            <li><strong>Mock Generator</strong>: `stream_generator.py` pushes raw user credit events continuously.</li>
+          </ul>
+        </div>
+
+        <div class="glass-card" id="card-consumer">
+          <div class="card-icon">⚙️</div>
+          <h3 class="card-title">Asynchronous Python Consumer</h3>
+          <p class="card-text">A decoupled worker (`consumer.py`) polls active shards and processes events concurrently.</p>
+          <ul class="bullet-list">
+            <li><strong>Raw Ingestion Lake</strong>: Immediately logs raw payloads into file system directories.</li>
+            <li><strong>Decoupled Design</strong>: Isolates downstream ingestion bottlenecks from streaming queues.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="interactive-diagram">
+        <div class="diagram-node" data-target="card-kinesis">
+          <div class="diagram-node-title">stream_generator.py</div>
+          <div class="diagram-node-sub">Mock Event Pushes</div>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-node" data-target="card-kinesis">
+          <div class="diagram-node-title">Kinesis Stream</div>
+          <div class="diagram-node-sub">LocalStack Shard</div>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-node" data-target="card-consumer">
+          <div class="diagram-node-title">consumer.py</div>
+          <div class="diagram-node-sub">Active Poller</div>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-node" data-target="card-consumer">
+          <div class="diagram-node-title">Raw Data Lake</div>
+          <div class="diagram-node-sub">Hourly JSONL Files</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: PHASE A - SCHEMA VALIDATION & CACHE -->
+    <section class="slide" data-theme="theme-phase-a">
+      <div class="slide-title-wrapper">
+        <div class="slide-category">Phase A: Ingestion Quality Control</div>
+        <h2 class="slide-title">Dual-Path Write & Stream DLQ</h2>
+      </div>
+
+      <div class="grid-container grid-2col">
+        <div class="glass-card">
+          <div class="card-icon">🛡️</div>
+          <h3 class="card-title">Strict Pydantic Validation</h3>
+          <p class="card-text">Every application payload is parsed against a strong Pydantic model (`schemas.py`) before operational caching.</p>
+          <ul class="bullet-list">
+            <li><strong>Corrupt Detection</strong>: Blocks invalid types (e.g. string instead of float, missing IDs).</li>
+            <li><strong>Idempotency</strong>: Valid entries are upserted into PostgreSQL cache using `ON CONFLICT`.</li>
+          </ul>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-icon">🚨</div>
+          <h3 class="card-title">Stream Dead-Letter Queue</h3>
+          <p class="card-text">Failures must not break the streaming loop. Invalid payloads are isolated for easy diagnostics.</p>
+          <ul class="bullet-list">
+            <li><strong>Dual-Storage DLQ</strong>: Writes malformed records to Postgres `stream_dlq` and `corrupt_events.jsonl` files.</li>
+            <li><strong>Detailed Audit Trail</strong>: Captures raw validation error traces right next to the event payload.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: PHASE B - BATCH PIPELINE -->
+    <section class="slide" data-theme="theme-phase-b">
+      <div class="slide-title-wrapper">
+        <div class="slide-category">Phase B: Orchestrated Ingestion</div>
+        <h2 class="slide-title">Scheduled Partner Data Ingestion</h2>
+      </div>
+
+      <div class="grid-container grid-2col">
+        <div class="glass-card" id="card-dag">
+          <div class="card-icon">🗓️</div>
+          <h3 class="card-title">Airflow DAG Orchestration</h3>
+          <p class="card-text">A scheduled batch engine pulls financial transaction files delivered by third-party partners.</p>
+          <ul class="bullet-list">
+            <li><strong>File Sensors</strong>: DAG pauses until transaction data directories populate on disk.</li>
+            <li><strong>Automated Retries</strong>: Set up tasks with robust backoffs to survive temporary db locking.</li>
+          </ul>
+        </div>
+
+        <div class="glass-card" id="card-batchdb">
+          <div class="card-icon">📂</div>
+          <h3 class="card-title">Analytical Batch Database</h3>
+          <p class="card-text">Successfully processed transactions are loaded to Postgres relational tables.</p>
+          <ul class="bullet-list">
+            <li><strong>Transaction Modeling</strong>: Columns partitioned, validated, and normalized during upsert.</li>
+            <li><strong>SQL UPSERT</strong>: Safely runs multiple times without creating duplicate records.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="interactive-diagram">
+        <div class="diagram-node" data-target="card-dag">
+          <div class="diagram-node-title">Partner CSV files</div>
+          <div class="diagram-node-sub">Transaction Logs</div>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-node" data-target="card-dag">
+          <div class="diagram-node-title">File Sensor Task</div>
+          <div class="diagram-node-sub">Airflow Trigger</div>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-node" data-target="card-batchdb">
+          <div class="diagram-node-title">Batch Load Task</div>
+          <div class="diagram-node-sub">UPSERT Transactions</div>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-node" data-target="card-batchdb">
+          <div class="diagram-node-title">PostgreSql DB</div>
+          <div class="diagram-node-sub">batch_transactions</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: PHASE B - RESILIENCE & ARCHIVAL -->
+    <section class="slide" data-theme="theme-phase-b">
+      <div class="slide-title-wrapper">
+        <div class="slide-category">Phase B: Resilience & Archival</div>
+        <h2 class="slide-title">Data Archival & Batch DLQ Isolation</h2>
+      </div>
+
+      <div class="grid-container grid-2col">
+        <div class="glass-card">
+          <div class="card-icon">🗜️</div>
+          <h3 class="card-title">Partner Log Compression Archive</h3>
+          <p class="card-text">Once files are scanned, they are moved to a local cold storage archive to minimize ingestion footprint.</p>
+          <ul class="bullet-list">
+            <li><strong>Gzip Compression</strong>: Transferred files are compressed as `*.txt.gz` and timestamped.</li>
+            <li><strong>Regulatory Auditing</strong>: Preserves original CSV layouts without wasting active host storage.</li>
+          </ul>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-icon">⚡</div>
+          <h3 class="card-title">Batch Row Isolation & DLQ</h3>
+          <p class="card-text">Individual corrupted CSV lines are isolated so they don't block valid adjacent rows.</p>
+          <ul class="bullet-list">
+            <li><strong>Fault-Tolerant Parsing</strong>: Catches schema drift or bad characters during CSV iteration.</li>
+            <li><strong>Corrupt Logs</strong>: Offloads corrupted rows to Postgres `batch_dlq` and a `corrupt_rows.jsonl` file.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: PHASE C - REVERSE ETL & REPORTS -->
+    <section class="slide" data-theme="theme-phase-c">
+      <div class="slide-title-wrapper">
+        <div class="slide-category">Phase C: Reverse ETL & Delivery</div>
+        <h2 class="slide-title">Reverse ETL Report Delivery</h2>
+      </div>
+
+      <div class="grid-container grid-2col">
+        <div class="glass-card" id="card-etl">
+          <div class="card-icon">🔄</div>
+          <h3 class="card-title">SQL Aggregation Engine</h3>
+          <p class="card-text">Summarizes relational transaction data back into business metrics for external applications.</p>
+          <ul class="bullet-list">
+            <li><strong>Complex SQL Views</strong>: Calculates total transaction counts, sum aggregates, and averages.</li>
+            <li><strong>Custom Formats</strong>: Creates standard CSV report files dynamically inside Airflow tasks.</li>
+          </ul>
+        </div>
+
+        <div class="glass-card" id="card-gdrive">
+          <div class="card-icon">☁️</div>
+          <h3 class="card-title">Shared Folder Delivery</h3>
+          <p class="card-text">Simulates the Reverse ETL delivery phase of placing aggregate summaries into consumer file system locations.</p>
+          <ul class="bullet-list">
+            <li><strong>CSV File Headers</strong>: Injects execution audit metadata (e.g. `row_count` indicator) directly inside the header.</li>
+            <li><strong>Target Directory</strong>: Writes reports to simulated Google Drive Shared folders on local disk.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="interactive-diagram">
+        <div class="diagram-node" data-target="card-etl">
+          <div class="diagram-node-title">batch_transactions</div>
+          <div class="diagram-node-sub">Postgres Table</div>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-node" data-target="card-etl">
+          <div class="diagram-node-title">SQL Aggregator</div>
+          <div class="diagram-node-sub">Airflow Job</div>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-node" data-target="card-gdrive">
+          <div class="diagram-node-title">Summary CSV</div>
+          <div class="diagram-node-sub">Header Metadata</div>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-node" data-target="card-gdrive">
+          <div class="diagram-node-title">Simulated GDrive</div>
+          <div class="diagram-node-sub">Shared Target</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: PHASE C - OBSERVABILITY & AUDIT -->
+    <section class="slide" data-theme="theme-phase-c">
+      <div class="slide-title-wrapper">
+        <div class="slide-category">Phase C: Observability & Integrity</div>
+        <h2 class="slide-title">Closed-Loop Auditing & Reconciliation</h2>
+      </div>
+
+      <div class="grid-container grid-2col">
+        <div class="glass-card">
+          <div class="card-icon">📊</div>
+          <h3 class="card-title">`pipeline_audits` Instrumentation</h3>
+          <p class="card-text">All streaming processes and batch DAG runs insert structured logs into a unified dashboard table.</p>
+          <div class="db-preview">
+            <table>
+              <tr>
+                <th>pipeline_name</th>
+                <th>records_processed</th>
+                <th>records_rejected</th>
+                <th>status</th>
+              </tr>
+              <tr>
+                <td>streaming_consumer</td>
+                <td>12450</td>
+                <td>14</td>
+                <td>SUCCESS</td>
+              </tr>
+              <tr>
+                <td>batch_partner</td>
+                <td>4850</td>
+                <td>2</td>
+                <td>SUCCESS</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-icon">🔎</div>
+          <h3 class="card-title">Automated Reconciliation Task</h3>
+          <p class="card-text">A specific DAG reconciliation job performs cross-verification checks between the source and target landing spaces.</p>
+          <ul class="bullet-list">
+            <li><strong>Audit Counts</strong>: Compares input file lines against final Postgres database transaction row counts.</li>
+            <li><strong>Data Mismatch Alerts</strong>: Logs failure context in database audits if discrepancies are detected.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 8: CONCLUSION -->
+    <section class="slide" data-theme="theme-conclusion">
+      <div class="concl-hero">
+        <div class="slide-category">Summary & Design Philosophy</div>
+        <h2 class="concl-title">Engineering Highlights & Key Takeaways</h2>
+        <p class="concl-text">An enterprise-grade template focusing on structural reliability, data isolation, and comprehensive pipeline visibility.</p>
+      </div>
+
+      <div class="grid-container grid-3col">
+        <div class="glass-card">
+          <h3 class="card-title" style="font-size:1.25rem;">Storage Optimization</h3>
+          <ul class="bullet-list" style="margin-top:0.5rem;">
+            <li><strong>PG Operational Cache</strong>: Provides rel. aggregations and saves local dev memory footprint.</li>
+            <li><strong>Hourly Partitions</strong>: Optimizes downstream analytical query scanning by over 95%.</li>
+          </ul>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="card-title" style="font-size:1.25rem;">Production Resilience</h3>
+          <ul class="bullet-list" style="margin-top:0.5rem;">
+            <li><strong>Pydantic schemas</strong>: Assures high-quality ingestion streams.</li>
+            <li><strong>Isolated DLQs</strong>: Directs faulty rows to DB / JSONL tables, preventing pipeline stalls.</li>
+          </ul>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="card-title" style="font-size:1.25rem;">Developer Velocity</h3>
+          <ul class="bullet-list" style="margin-top:0.5rem;">
+            <li><strong>1-Step Orchestration</strong>: Single Docker compose up commands bootstrap the full flow.</li>
+            <li><strong>Offline Kinesis</strong>: Pinned LocalStack setup executes completely offline.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Slide Overlay Navigation Controls -->
+  <div class="controls-overlay">
+    <button class="control-btn" id="prev-btn" title="Previous Slide (Left Arrow)">◀</button>
+    <button class="control-btn" id="play-btn" title="Play Slideshow">▶</button>
+    <div class="progress-indicator"></div>
+    <button class="control-btn" id="next-btn" title="Next Slide (Right Arrow/Space)">▶</button>
+  </div>
+
+  <!-- Keyboard Hints Overlay -->
+  <div class="keyboard-hints">
+    <span>Use</span>
+    <span class="key-tag">←</span>
+    <span>/</span>
+    <span class="key-tag">→</span>
+    <span>or</span>
+    <span class="key-tag">Space</span>
+    <span>to navigate</span>
+  </div>
+
+  <!-- Bottom progress bar indicator -->
+  <div class="bottom-progress-bar"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
