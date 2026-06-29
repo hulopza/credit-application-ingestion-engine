@@ -42,39 +42,34 @@ graph TD
 
 ## 🚀 Quick Start Guide
 
-### 1. Spin up Infrastructure
-Start PostgreSQL, LocalStack (Kinesis), Apache Airflow, stream generator, and stream consumer services:
+### 1. Spin up the Stack
+Start the database, LocalStack (Kinesis), Apache Airflow, stream generator, and stream consumer services in the background:
 ```bash
 docker compose up -d
 ```
 *Note: We pinned LocalStack to version `3.4.0` so that it runs successfully offline without requiring an enterprise auth token.*
 
-### 2. Prepare Directories and Permissions
-Grant local write access to Airflow and ingestion containers:
+### 2. Grant Local Directory Permissions
+Grant write access to the shared data directory for the Airflow and consumer containers:
 ```bash
 chmod -R 777 data
 ```
-Copy sample partner batch transaction files:
-```bash
-mkdir -p data/partner_transactions
-cp supporting_material/partner_transactions_day_*.txt data/partner_transactions/
-```
+*(The sample transaction files are already present under `data/partner_transactions/partner_transactions_day_*.txt`)*
 
 ### 3. Monitor Streaming Ingestion
-The stream generator and stream consumer are started automatically by Docker Compose. You can monitor their logs to ensure application events are dispatched and ingested successfully:
+The stream generator and stream consumer run automatically. You can monitor their real-time execution logs:
 ```bash
-# View real-time generator logs (shows event dispatching)
+# Monitor the event generator (shows dispatching of simulated applications)
 docker compose logs -f stream-generator
 
-# View real-time consumer logs (shows validation and database insertion)
+# Monitor the consumer (shows schema validation, writing to database and data lake)
 docker compose logs -f stream-consumer
 ```
-*(Optional local alternative: If you prefer running the generator or consumer locally outside of Docker, you can create a local Python environment, install requirements, configure environment variables, and run `supporting_material/stream_generator.py` or `src/consumer.py` manually).*
 
-### 4. Run the Orchestrated Batch DAG
+### 4. Run the Orchestrated Batch Pipeline
 1. Access the Airflow UI at `http://localhost:8080` (credentials: `admin` / `admin`).
-2. Locate the DAG `partner_financials_pipeline` and **Unpause** it.
-3. Trigger a manual DAG run to ingest, archive, validate, and generate the reverse ETL report.
+2. Locate the `partner_financials_pipeline` DAG and click **Unpause** (the toggle button).
+3. Trigger a manual DAG run to ingest the transaction files, archive them, run reconciliation, and deliver the Reverse ETL report.
 
 ---
 
