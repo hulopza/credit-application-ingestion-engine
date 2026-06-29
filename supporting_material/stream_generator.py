@@ -1,3 +1,4 @@
+import os
 import json
 import time
 import random
@@ -5,9 +6,10 @@ import boto3
 from datetime import datetime
 
 # Boto3 client configuration pointing to LocalStack Kinesis
+KINESIS_ENDPOINT = os.getenv("KINESIS_ENDPOINT", "http://localhost:4566")
 kinesis_client = boto3.client(
     'kinesis',
-    endpoint_url='http://localhost:4566',
+    endpoint_url=KINESIS_ENDPOINT,
     region_name='us-east-1',
     aws_access_key_id='mock',
     aws_secret_access_key='mock'

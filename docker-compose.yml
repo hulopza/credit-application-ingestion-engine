@@ -78,6 +78,43 @@ services:
       - ./data:/opt/airflow/data
     command: scheduler
 
+  stream-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stream_generator
+    restart: always
+    environment:
+      - KINESIS_ENDPOINT=http://localstack:4566
+    volumes:
+      - .:/app
+    command: python -u supporting_material/stream_generator.py
+    depends_on:
+      localstack:
+        condition: service_healthy
+
+  stream-consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stream_consumer
+    restart: always
+    environment:
+      - KINESIS_ENDPOINT=http://localstack:4566
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=challenge_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    volumes:
+      - .:/app
+    command: python -u src/consumer.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   localstack_data:
